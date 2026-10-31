@@ -17,6 +17,8 @@ class MessageListItemMapper(
     private val outboxFolderManager: OutboxFolderManager,
     private val contactLetterBitmapCreator: ContactLetterBitmapCreator?,
 ) : MessageMapper<MessageListItem> {
+    // Looked up at most once per mapper (one mapper is created per list load), instead of once per message.
+    private val outboxFolderId: Long by lazy { outboxFolderManager.getOutboxFolderIdSync(account.id) }
 
     override fun map(message: MessageDetailsAccessor): MessageListItem {
         val fromAddresses = message.fromAddresses
@@ -25,7 +27,7 @@ class MessageListItemMapper(
         val isMessageEncrypted = previewResult.previewType == PreviewType.ENCRYPTED
         val previewText = if (previewResult.isPreviewTextAvailable) previewResult.previewText else ""
         val uniqueId = createUniqueId(account, message.id)
-        val showRecipients = DisplayAddressHelper.shouldShowRecipients(outboxFolderManager, account, message.folderId)
+        val showRecipients = DisplayAddressHelper.shouldShowRecipients(account, message.folderId) { outboxFolderId }
         val displayAddress = if (showRecipients) toAddresses.firstOrNull() else fromAddresses.firstOrNull()
         val messageListSettings = messageListPreferencesManager.getConfig()
         val displayName = if (showRecipients) {

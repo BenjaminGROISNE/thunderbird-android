@@ -19,13 +19,16 @@ internal class MessageListItemMapper(
 ) : MessageMapper<MessageListItem> {
     private val calendar: Calendar = Calendar.getInstance()
 
+    // Looked up at most once per mapper (one mapper is created per list load), instead of once per message.
+    private val outboxFolderId: Long by lazy { outboxFolderManager.getOutboxFolderIdSync(account.id) }
+
     override fun map(message: MessageDetailsAccessor): MessageListItem {
         val fromAddresses = message.fromAddresses
         val toAddresses = message.toAddresses
         val previewResult = message.preview
         val previewText = if (previewResult.isPreviewTextAvailable) previewResult.previewText else ""
         val uniqueId = createUniqueId(account, message.id)
-        val showRecipients = DisplayAddressHelper.shouldShowRecipients(outboxFolderManager, account, message.folderId)
+        val showRecipients = DisplayAddressHelper.shouldShowRecipients(account, message.folderId) { outboxFolderId }
         val displayAddress = if (showRecipients) toAddresses.firstOrNull() else fromAddresses.firstOrNull()
         val displayName = if (showRecipients) {
             val settings = messageListPreferencesManager.getConfig()

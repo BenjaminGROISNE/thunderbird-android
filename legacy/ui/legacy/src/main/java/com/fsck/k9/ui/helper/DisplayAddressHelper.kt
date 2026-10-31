@@ -9,6 +9,22 @@ object DisplayAddressHelper {
         account: LegacyAccount,
         folderId: Long,
     ): Boolean {
+        return shouldShowRecipients(account, folderId) {
+            outboxFolderManager.getOutboxFolderIdSync(account.id)
+        }
+    }
+
+    /**
+     * Same as the variant taking an [OutboxFolderManager], but lets the caller provide the Outbox folder ID.
+     *
+     * [outboxFolderId] is only called when [folderId] is not one of the account's special folders. Callers that
+     * check many messages can cache the value, instead of looking it up once per message.
+     */
+    inline fun shouldShowRecipients(
+        account: LegacyAccount,
+        folderId: Long,
+        outboxFolderId: () -> Long,
+    ): Boolean {
         return when (folderId) {
             account.inboxFolderId -> false
             account.archiveFolderId -> false
@@ -16,7 +32,7 @@ object DisplayAddressHelper {
             account.trashFolderId -> false
             account.sentFolderId -> true
             account.draftsFolderId -> true
-            outboxFolderManager.getOutboxFolderIdSync(account.id) -> true
+            outboxFolderId() -> true
             else -> false
         }
     }
