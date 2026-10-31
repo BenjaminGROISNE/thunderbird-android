@@ -227,4 +227,8 @@ private fun Comparator<MessageListItem>.thenByDate(config: MessageListConfig): C
     }
 }
 
-data class MessageListInfo(val messageListItems: List<MessageListItem>, val hasMoreMessages: Boolean)
+data class MessageListInfo(
+    val messageListItems: List<MessageListItem>,
+    val hasMoreMessages: Boolean,
+    val deletedFolderId: Long? = null,
+)

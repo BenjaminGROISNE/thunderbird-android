@@ -13,6 +13,7 @@ import net.thunderbird.feature.account.AccountIdFactory
 
 class MessageListLiveData(
     private val messageListLoader: MessageListLoader,
+    private val deletedFolderDetector: DeletedFolderDetector,
     private val accountManager: LegacyAccountManager,
     private val messageListRepository: MessageListRepository,
     private val coroutineScope: CoroutineScope,
@@ -26,7 +27,12 @@ class MessageListLiveData(
     private fun loadMessageListAsync() {
         coroutineScope.launch(Dispatchers.Main) {
             val messageList = withContext(Dispatchers.IO) {
-                messageListLoader.getMessageList(config)
+                val deletedFolderId = deletedFolderDetector.findDeletedFolderId(config.search)
+                if (deletedFolderId != null) {
+                    MessageListInfo(emptyList(), hasMoreMessages = false, deletedFolderId = deletedFolderId)
+                } else {
+                    messageListLoader.getMessageList(config)
+                }
             }
             value = messageList
         }
