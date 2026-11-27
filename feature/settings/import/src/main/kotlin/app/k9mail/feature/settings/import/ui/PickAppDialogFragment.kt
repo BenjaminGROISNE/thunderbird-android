@@ -6,15 +6,9 @@ import android.content.DialogInterface.OnClickListener
 import android.os.Bundle
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import app.k9mail.feature.settings.importing.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.launch
+import net.thunderbird.core.android.common.lifecycle.observe
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import com.fsck.k9.ui.base.R as BaseR
 
@@ -55,13 +49,5 @@ internal class PickAppDialogFragment : DialogFragment() {
     companion object {
         const val FRAGMENT_RESULT_KEY = "pickApp"
         const val FRAGMENT_RESULT_APP = "packageName"
-    }
-}
-
-private fun <T> Flow<T>.observe(lifecycleOwner: LifecycleOwner, collector: FlowCollector<T>) {
-    lifecycleOwner.lifecycleScope.launch {
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            collect(collector)
-        }
     }
 }

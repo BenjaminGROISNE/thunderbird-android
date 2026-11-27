@@ -30,11 +30,11 @@ import com.fsck.k9.mail.Address
 import com.fsck.k9.mailstore.CryptoResultAnnotation
 import com.fsck.k9.ui.R
 import com.fsck.k9.ui.base.extensions.withArguments
-import com.fsck.k9.ui.observe
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import com.mikepenz.fastadapter.listeners.ClickEventHook
+import net.thunderbird.core.android.common.lifecycle.observe
 import net.thunderbird.legacy.logging.Log
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel

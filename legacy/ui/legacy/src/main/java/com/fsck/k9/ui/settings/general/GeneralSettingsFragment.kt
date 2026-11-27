@@ -20,7 +20,6 @@ import com.fsck.k9.job.K9JobManager
 import com.fsck.k9.ui.BuildConfig
 import com.fsck.k9.ui.R
 import com.fsck.k9.ui.base.extensions.withArguments
-import com.fsck.k9.ui.observe
 import com.fsck.k9.ui.settings.notificationactions.NotificationActionsSettingsActivity
 import com.fsck.k9.ui.settings.remove
 import com.google.android.material.snackbar.Snackbar
@@ -28,6 +27,7 @@ import com.takisoft.preferencex.PreferenceFragmentCompat
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import net.thunderbird.core.android.common.lifecycle.observe
 import net.thunderbird.core.featureflag.FeatureFlagProvider
 import net.thunderbird.core.featureflag.keys.GeneratedFeatureFlagKey
 import org.koin.android.ext.android.inject

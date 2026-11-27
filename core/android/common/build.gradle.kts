@@ -9,6 +9,7 @@ android {
 dependencies {
     api(projects.core.common)
 
+    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.webkit)
 
     testImplementation(projects.core.testing)

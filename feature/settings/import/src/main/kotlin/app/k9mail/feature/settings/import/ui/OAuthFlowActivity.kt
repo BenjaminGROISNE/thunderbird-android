@@ -6,17 +6,11 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.ProgressBar
 import androidx.core.view.isVisible
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import app.k9mail.feature.settings.importing.R
 import com.fsck.k9.ui.base.BaseActivity
 import com.google.android.material.textview.MaterialTextView
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.launch
 import net.thunderbird.core.android.account.LegacyAccountManager
+import net.thunderbird.core.android.common.lifecycle.observe
 import net.thunderbird.feature.account.AccountIdFactory
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -121,14 +115,6 @@ class OAuthFlowActivity : BaseActivity() {
             return Intent(context, OAuthFlowActivity::class.java).apply {
                 putExtra(EXTRA_ACCOUNT_UUID, accountUuid)
             }
-        }
-    }
-}
-
-private fun <T> Flow<T>.observe(lifecycleOwner: LifecycleOwner, collector: FlowCollector<T>) {
-    lifecycleOwner.lifecycleScope.launch {
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            collect(collector)
         }
     }
 }
