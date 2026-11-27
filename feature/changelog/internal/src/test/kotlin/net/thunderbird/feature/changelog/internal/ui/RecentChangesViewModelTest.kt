@@ -1,18 +1,18 @@
 package net.thunderbird.feature.changelog.internal.ui
 
-import assertk.assertThat
+import app.k9mail.core.ui.compose.testing.mvi.assertThatAndMviTurbinesConsumed
+import app.k9mail.core.ui.compose.testing.mvi.runMviTest
+import app.k9mail.core.ui.compose.testing.mvi.turbinesWithInitialStateCheck
 import assertk.assertions.isEqualTo
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.setMain
+import net.thunderbird.components.ui.testing.coroutines.MainDispatcherHelper
 import net.thunderbird.core.common.appConfig.PlatformConfigProvider
 import net.thunderbird.core.preference.GeneralSettings
 import net.thunderbird.core.preference.GeneralSettingsManager
@@ -23,77 +23,107 @@ import net.thunderbird.feature.changelog.internal.ui.RecentChangesContract.State
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 
 // ChangeLogManager and ChangelogVersionHistory are final classes that need a Context and storage, so they are mocked.
-@OptIn(ExperimentalCoroutinesApi::class)
 class RecentChangesViewModelTest {
 
-    private val changelogVersionHistory = mock<ChangelogVersionHistory>()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val mainDispatcher = MainDispatcherHelper(UnconfinedTestDispatcher())
+
+    private val changelogFlow = MutableStateFlow(changelogAfterUpdate())
     private val changeLogManager = mock<ChangeLogManager> {
-        on { changelogFlow } doReturn flowOf(changelogVersionHistory)
+        on { changelogFlow } doReturn changelogFlow
     }
     private val generalSettingsManager = FakeGeneralSettingsManager()
 
     @BeforeTest
     fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        mainDispatcher.setUp()
     }
 
     @AfterTest
     fun tearDown() {
-        Dispatchers.resetMain()
+        mainDispatcher.tearDown()
     }
 
     @Test
-    fun `should show the hint after an update when recent changes are enabled`() {
-        givenChangelog(isFirstRun = true, isFirstRunEver = false)
+    fun `should show the hint when recent changes get enabled after an update`() = runMviTest {
+        // Arrange
+        generalSettingsManager.setShowRecentChanges(false)
+        val testSubject = createTestSubject()
+        val turbines = turbinesWithInitialStateCheck(testSubject, State(showRecentChangesHint = false))
+
+        // Act
         generalSettingsManager.setShowRecentChanges(true)
 
-        val testSubject = createTestSubject()
-
-        assertThat(testSubject.state.value).isEqualTo(State(showRecentChangesHint = true))
+        // Assert
+        assertThatAndMviTurbinesConsumed(actual = turbines.awaitStateItem(), turbines = turbines) {
+            isEqualTo(State(showRecentChangesHint = true))
+        }
     }
 
     @Test
-    fun `should not show the hint when recent changes are disabled`() {
-        givenChangelog(isFirstRun = true, isFirstRunEver = false)
+    fun `should hide the hint when recent changes get disabled`() = runMviTest {
+        // Arrange
+        generalSettingsManager.setShowRecentChanges(true)
+        val testSubject = createTestSubject()
+        val turbines = turbinesWithInitialStateCheck(testSubject, State(showRecentChangesHint = true))
+
+        // Act
         generalSettingsManager.setShowRecentChanges(false)
 
-        val testSubject = createTestSubject()
-
-        assertThat(testSubject.state.value).isEqualTo(State(showRecentChangesHint = false))
+        // Assert
+        assertThatAndMviTurbinesConsumed(actual = turbines.awaitStateItem(), turbines = turbines) {
+            isEqualTo(State(showRecentChangesHint = false))
+        }
     }
 
     @Test
-    fun `should not show the hint on the first run ever`() {
-        givenChangelog(isFirstRun = true, isFirstRunEver = true)
+    fun `should hide the hint on the first run ever`() = runMviTest {
+        // Arrange
         generalSettingsManager.setShowRecentChanges(true)
-
         val testSubject = createTestSubject()
+        val turbines = turbinesWithInitialStateCheck(testSubject, State(showRecentChangesHint = true))
 
-        assertThat(testSubject.state.value).isEqualTo(State(showRecentChangesHint = false))
+        // Act
+        changelogFlow.value = changelog(isFirstRun = true, isFirstRunEver = true)
+
+        // Assert
+        assertThatAndMviTurbinesConsumed(actual = turbines.awaitStateItem(), turbines = turbines) {
+            isEqualTo(State(showRecentChangesHint = false))
+        }
     }
 
     @Test
-    fun `should not show the hint when the version did not change`() {
-        givenChangelog(isFirstRun = false, isFirstRunEver = false)
+    fun `should hide the hint when the version did not change`() = runMviTest {
+        // Arrange
         generalSettingsManager.setShowRecentChanges(true)
-
         val testSubject = createTestSubject()
+        val turbines = turbinesWithInitialStateCheck(testSubject, State(showRecentChangesHint = true))
 
-        assertThat(testSubject.state.value).isEqualTo(State(showRecentChangesHint = false))
+        // Act
+        changelogFlow.value = changelog(isFirstRun = false, isFirstRunEver = false)
+
+        // Assert
+        assertThatAndMviTurbinesConsumed(actual = turbines.awaitStateItem(), turbines = turbines) {
+            isEqualTo(State(showRecentChangesHint = false))
+        }
     }
 
     @Test
-    fun `should write the current version when the hint is dismissed`() {
-        givenChangelog(isFirstRun = true, isFirstRunEver = false)
+    fun `should write the current version when the hint is dismissed`() = runMviTest {
+        // Arrange
         generalSettingsManager.setShowRecentChanges(true)
         val testSubject = createTestSubject()
+        val turbines = turbinesWithInitialStateCheck(testSubject, State(showRecentChangesHint = true))
 
+        // Act
         testSubject.event(Event.OnRecentChangesHintDismissed)
 
+        // Assert
         verify(changeLogManager).writeCurrentVersion()
+        turbines.stateTurbine.ensureAllEventsConsumed()
+        turbines.effectTurbine.ensureAllEventsConsumed()
     }
 
     private fun createTestSubject() = RecentChangesViewModel(
@@ -101,9 +131,15 @@ class RecentChangesViewModelTest {
         changeLogManager = changeLogManager,
     )
 
-    private fun givenChangelog(isFirstRun: Boolean, isFirstRunEver: Boolean) {
-        whenever(changelogVersionHistory.isFirstRun()).thenReturn(isFirstRun)
-        whenever(changelogVersionHistory.isFirstRunEver()).thenReturn(isFirstRunEver)
+    private fun changelogAfterUpdate() = changelog(isFirstRun = true, isFirstRunEver = false)
+
+    private fun changelog(isFirstRun: Boolean, isFirstRunEver: Boolean): ChangelogVersionHistory {
+        val firstRun = isFirstRun
+        val firstRunEver = isFirstRunEver
+        return mock {
+            on { isFirstRun() } doReturn firstRun
+            on { isFirstRunEver() } doReturn firstRunEver
+        }
     }
 }
 
@@ -112,7 +148,7 @@ private class FakeGeneralSettingsManager : GeneralSettingsManager {
         MutableStateFlow(GeneralSettings(platformConfigProvider = FakePlatformConfigProvider()))
 
     fun setShowRecentChanges(showRecentChanges: Boolean) {
-        generalSettings.value = generalSettings.value.let { settings ->
+        generalSettings.update { settings ->
             settings.copy(
                 display = settings.display.copy(
                     miscSettings = settings.display.miscSettings.copy(showRecentChanges = showRecentChanges),
@@ -121,16 +157,10 @@ private class FakeGeneralSettingsManager : GeneralSettingsManager {
         }
     }
 
-    @Deprecated(
-        message = "Use PreferenceManager<GeneralSettings>.getConfig() instead",
-        replaceWith = ReplaceWith("getConfig()"),
-    )
+    @Deprecated("Use PreferenceManager<GeneralSettings>.getConfig() instead")
     override fun getSettings(): GeneralSettings = generalSettings.value
 
-    @Deprecated(
-        message = "Use PreferenceManager<GeneralSettings>.getConfigFlow() instead",
-        replaceWith = ReplaceWith("getConfigFlow()"),
-    )
+    @Deprecated("Use PreferenceManager<GeneralSettings>.getConfigFlow() instead")
     override fun getSettingsFlow(): Flow<GeneralSettings> = generalSettings
 
     override fun save(config: GeneralSettings) {

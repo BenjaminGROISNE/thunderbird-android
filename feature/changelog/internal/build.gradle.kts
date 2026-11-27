@@ -15,6 +15,7 @@ dependencies {
     implementation(projects.feature.changelog.api)
     implementation(libs.kotlinx.serialization.json)
 
+    testImplementation(projects.core.ui.compose.testing)
     testImplementation(libs.mockito.kotlin)
 }
 codeCoverage {
