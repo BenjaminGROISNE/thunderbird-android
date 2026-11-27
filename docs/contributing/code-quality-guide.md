@@ -93,6 +93,13 @@ the type-resolved tasks; keep the settings of rules listed there in sync with `d
 configured in
 `build-plugin/plugin/src/main/kotlin/net/thunderbird/gradle/plugin/quality/detekt/DetektPlugin.kt`.
 
+#### Architecture rules
+
+Architecture conventions that detekt cannot check, such as the [MVI conventions](../architecture/ui-architecture.md)
+for ViewModels, contracts and screens, are enforced by [Konsist](https://docs.konsist.lemonappdev.com/) tests in
+`quality/konsist`. Run them with `./gradlew :quality:konsist:test`. Existing MVI violations are listed in
+`MviBaseline.kt`. Remove an entry when its violation is fixed, moved or deleted: the test fails on stale entries.
+
 ### Spotless
 
 [Spotless](https://github.com/diffplug/spotless) ensures consistent code formatting across the codebase:

@@ -62,7 +62,7 @@ class ValidateMviConventions {
         assertNoViolations(
             message = "Move the screen composable into a `ui` package (see the Clean Architecture in Internal Modules " +
                 "section of $MODULE_DOC).",
-            declarations = composables().filter { it.name.endsWith("Screen") && !it.resideInPackage(UI_PACKAGE) },
+            declarations = namedComposables().filter { it.name.endsWith("Screen") && !it.resideInPackage(UI_PACKAGE) },
             baseline = MviBaseline.screensOutsideUiPackage,
         )
     }
@@ -73,7 +73,7 @@ class ValidateMviConventions {
             message = "Pass `state` and `onEvent` instead of the ViewModel; only the top-level *Screen " +
                 "composable, or an entry point that injects its ViewModel with `koinViewModel()`, gets the " +
                 "ViewModel (see the Screens section of $DOC).",
-            declarations = composables().filter { function ->
+            declarations = namedComposables().filter { function ->
                 !function.name.endsWith("Screen") &&
                     function.parameters.any { parameter ->
                         parameter.type.name.removeSuffix("?").endsWith(VIEW_MODEL) &&
@@ -84,7 +84,7 @@ class ValidateMviConventions {
         )
     }
 
-    private fun composables() = productionScope.functions(includeNested = true, includeLocal = false)
+    private fun namedComposables() = productionScope.functions(includeNested = true, includeLocal = false)
         .filter { it.hasAnnotationWithName("Composable") }
 
     /** Whether this class extends, directly or not, one of the classes or interfaces named in [names]. */

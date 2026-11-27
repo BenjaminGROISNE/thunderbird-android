@@ -27,7 +27,7 @@ fun <T> assertNoViolations(
             (listOf("  $key") + matches.map { "    file://${it.location}" }).joinToString(separator = "\n")
         }.sorted().let(::addAll)
         if (staleEntries.isNotEmpty()) {
-            add("Fixed, remove from the baseline:")
+            add("Stale baseline entries:")
             staleEntries.sorted().forEach { add("  $it") }
         }
     }.joinToString(separator = "\n")
